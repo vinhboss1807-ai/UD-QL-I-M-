@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Điểm Sinh viên - Trường Đại học Hải Phòng (HPUNI)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        hpuni: {
+                            950: '#040d1a',
+                            900: '#0a192f',
+                            800: '#112240',
+                            700: '#1d3557',
+                            600: '#0284c7',
+                            500: '#0ea5e9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        /* Hiệu ứng nền chuyển động nổi bật cho màn hình đăng nhập */
+        .login-animated-bg {
+            background: radial-gradient(circle at 20% 20%, #0ea5e9 0%, transparent 35%),
+                        radial-gradient(circle at 80% 80%, #1e40af 0%, transparent 40%),
+                        linear-gradient(135deg, #040d1a 0%, #0a192f 50%, #0f2942 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: 0.45;
+            animation: floatOrb 12s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+        .glow-orb-1 {
+            width: 360px;
+            height: 360px;
+            background: #38bdf8;
+            top: -80px;
+            left: -80px;
+        }
+        .glow-orb-2 {
+            width: 420px;
+            height: 420px;
+            background: #f59e0b;
+            bottom: -120px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, 30px) scale(1.12); }
+        }
+        .row-f-alert {
+            background-color: #fff1f2 !important;
+        }
+        .row-f-alert:hover {
+            background-color: #ffe4e6 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+    <!-- KHUNG THÔNG BÁO TOAST -->
+    <div id="toast-box" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- ================= 1. MÀN HÌNH ĐĂNG NHẬP TỐI GIẢN & HIỆU ỨNG NỔI BẬT ================= -->
+    <section id="login-view" class="login-animated-bg min-h-screen w-full flex items-center justify-center p-4">
+        <div class="glow-orb glow-orb-1"></div>
+        <div class="glow-orb glow-orb-2"></div>
+
+        <div class="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-sky-300/40 overflow-hidden">
+            <!-- Header Card Đăng nhập -->
+            <div class="bg-gradient-to-r from-hpuni-950 via-hpuni-900 to-sky-900 px-7 py-7 text-center border-b border-sky-400/30">
+                <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-300 text-3xl shadow-inner">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-lg sm:text-xl font-black tracking-wide text-white uppercase">Trường Đại học Hải Phòng</h1>
+                <p class="text-xs font-extrabold text-cyan-300 uppercase tracking-widest mt-1">Cổng Quản Lý &amp; Tra Cứu Điểm Tín Chỉ</p>
+            </div>
+
+            <!-- Form Đăng nhập -->
+            <form onsubmit="handleLogin(event)" class="p-7 sm:p-8 space-y-5">
+                <div class="text-center">
+                    <h2 class="text-base font-extrabold text-slate-800 uppercase tracking-wide">Đăng nhập hệ thống</h2>
+                </div>
+
+                <div>
+                    <label for="login-user" class="block text-xs font-extrabold uppercase text-slate-600 mb-2">
+                        <i class="fa-solid fa-user-shield text-sky-600 mr-1.5"></i>Tài khoản / Mã số sinh viên:
+                    </label>
+                    <input type="text" id="login-user" required autocomplete="off"
+                        placeholder="Nhập tài khoản cán bộ hoặc Mã SV..."
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-bold text-slate-900 focus:bg-white focus:border-sky-600 focus:ring-2 focus:ring-sky-500/20 outline-none transition">
+                </div>
+
+                <div>
+                    <label for="login-pass" class="block text-xs font-extrabold uppercase text-slate-600 mb-2">
+                        <i class="fa-solid fa-key text-sky-600 mr-1.5"></i>Mật khẩu:
+                    </label>
+                    <input type="password" id="login-pass" required
+                        placeholder="Nhập mật khẩu..."
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-bold text-slate-900 focus:bg-white focus:border-sky-600 focus:ring-2 focus:ring-sky-500/20 outline-none transition">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-sky-600/30 transition transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+                </button>
+
+                <div class="pt-3 border-t border-slate-100 text-center">
+                    <p class="text-[11px] font-semibold text-slate-500 italic">
+                        <i class="fa-solid fa-lock text-emerald-600 mr-1"></i>Chế độ bảo mật: Giảng viên chỉ xem được học phần giảng dạy, Sinh viên chỉ xem được kết quả cá nhân.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ================= 2. GIAO DIỆN CHÍNH SAU ĐĂNG NHẬP ================= -->
+    <div id="app-view" class="hidden min-h-screen flex flex-col bg-slate-100">
+        <!-- Thanh Header -->
+        <header class="bg-hpuni-900 text-white shadow-lg border-b border-sky-500/20 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+                <!-- Logo & Tên trường -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-lg font-black shadow">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm sm:text-base font-black tracking-tight uppercase text-white">TRƯỜNG ĐẠI HỌC HẢI PHÒNG (HPUNI)</span>
+                            <span id="header-lock-badge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 border border-rose-400/40 text-rose-300">
+                                <i class="fa-solid fa-lock mr-1"></i>Đã khóa sổ điểm
+                            </span>
+                        </div>
+                        <p id="header-sub-title" class="text-[11px] text-cyan-300 font-semibold">Hệ thống Quản lý Điểm Tín chỉ &amp; Trích xuất Danh sách Điểm F</p>
+                    </div>
+                </div>
+
+                <!-- Badge Thông tin người dùng đang đăng nhập + Nút Đổi MK & Đăng xuất -->
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <!-- Badge hiển thị chuẩn: Dòng trắng phía trên + Dòng vàng phía dưới -->
+                    <div class="text-right hidden sm:flex flex-col justify-center bg-slate-800/90 px-4 py-1.5 rounded-2xl border border-slate-700/80 shadow-inner min-w-[180px]">
+                        <div id="header-user-name" class="text-xs sm:text-sm font-extrabold text-white leading-tight">Quản trị viên (Admin)</div>
+                        <div id="header-user-role" class="text-[11px] font-extrabold text-amber-400 leading-tight mt-0.5">Quản trị hệ thống (ADMIN01)</div>
+                    </div>
+
+                    <button onclick="openPasswordModal()" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-key"></i> <span class="hidden md:inline">Đổi mật khẩu</span>
+                    </button>
+
+                    <button onclick="handleLogout()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-power-off"></i> <span class="hidden md:inline">Đăng xuất</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+            <!-- Banner thông báo chế độ Sinh viên cá nhân (chỉ hiện khi SV đăng nhập) -->
+            <div id="student-isolation-banner" class="hidden bg-gradient-to-r from-sky-900 to-hpuni-800 text-white p-4 rounded-2xl shadow-md border border-sky-400/30 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-400/20 flex items-center justify-center text-sky-300 text-lg">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-black uppercase tracking-wide text-cyan-300">Cổng tra cứu kết quả học tập cá nhân độc lập</h3>
+                        <p id="student-banner-desc" class="text-xs text-slate-200 mt-0.5">Dữ liệu được bảo mật cá nhân hóa. Bạn chỉ nhìn thấy bảng điểm và các học phần của riêng mình.</p>
+                    </div>
+                </div>
+                <span class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold">
+                    <i class="fa-solid fa-shield-halved mr-1"></i>Bảo mật cá nhân 100%
+                </span>
+            </div>
+
+            <!-- Banner thông báo chế độ Giảng viên Bộ môn (chỉ hiện khi Giảng viên đăng nhập) -->
+            <div id="lecturer-isolation-banner" class="hidden bg-gradient-to-r from-emerald-950 via-teal-900 to-hpuni-900 text-white p-4 rounded-2xl shadow-md border border-emerald-400/30 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-400/20 flex items-center justify-center text-emerald-300 text-xl">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <h3 id="lecturer-banner-title" class="text-xs sm:text-sm font-black uppercase tracking-wide text-emerald-300">Phân quyền Giảng viên Bộ môn độc lập</h3>
+                        <p id="lecturer-banner-desc" class="text-xs text-slate-200 mt-0.5">Bạn chỉ được quyền xem, lọc, nhập/sửa điểm và trích xuất danh sách điểm F của học phần được phân công giảng dạy.</p>
+                    </div>
+                </div>
+                <span id="lecturer-course-badge" class="px-3.5 py-1.5 rounded-xl bg-amber-400/20 border border-amber-300/40 text-amber-300 text-xs font-extrabold">
+                    <i class="fa-solid fa-book-bookmark mr-1"></i>Học phần phụ trách
+                </span>
+            </div>
+
+            <!-- 4 Thẻ KPI Thống kê động -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-sky-600 flex items-center justify-between">
+                    <div>
+                        <p id="kpi-label-1" class="text-[11px] font-extrabold uppercase text-slate-400">Quy mô sinh viên</p>
+                        <h3 id="kpi-val-1" class="text-xl font-black text-slate-900 mt-1">6 Sinh viên</h3>
+                        <p id="kpi-sub-1" class="text-xs font-semibold text-sky-700 mt-1"><i class="fa-solid fa-users mr-1"></i>Lớp CNTT3K25</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-teal-600 flex items-center justify-between">
+                    <div>
+                        <p id="kpi-label-2" class="text-[11px] font-extrabold uppercase text-slate-400">Tổng bản ghi điểm</p>
+                        <h3 id="kpi-val-2" class="text-xl font-black text-slate-900 mt-1">30 Bản ghi</h3>
+                        <p id="kpi-sub-2" class="text-xs font-semibold text-teal-700 mt-1"><i class="fa-solid fa-book-open mr-1"></i>5 Môn (14 Tín chỉ)</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-rose-600 flex items-center justify-between">
+                    <div>
+                        <p id="kpi-label-3" class="text-[11px] font-extrabold uppercase text-slate-400">Lượt học phần điểm F</p>
+                        <h3 id="kpi-val-3" class="text-xl font-black text-rose-600 mt-1">4 Lượt F</h3>
+                        <p id="kpi-sub-3" class="text-xs font-semibold text-rose-700 mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Điểm HP &lt; 3.00</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-file-circle-xmark"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-amber-500 flex items-center justify-between">
+                    <div>
+                        <p id="kpi-label-4" class="text-[11px] font-extrabold uppercase text-slate-400">Tỷ lệ qua môn</p>
+                        <h3 id="kpi-val-4" class="text-xl font-black text-slate-900 mt-1">86.7% Đạt</h3>
+                        <p id="kpi-sub-4" class="text-xs font-semibold text-amber-700 mt-1"><i class="fa-solid fa-calculator mr-1"></i>20% CC - 30% KT - 50% Thi</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thanh Điều Hướng Tabs -->
+            <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+                <button id="btn-tab-detail" onclick="switchTab('tab-detail')" class="tab-btn flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer bg-hpuni-900 text-white shadow">
+                    <i class="fa-solid fa-list-check"></i> <span>1. Bảng Điểm Học Phần Chi Tiết</span>
+                </button>
+                <button id="btn-tab-gpa" onclick="switchTab('tab-gpa')" class="tab-btn flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-chart-line"></i> <span>2. Tổng Hợp ĐTB Học Kỳ</span>
+                </button>
+                <button id="btn-tab-f" onclick="switchTab('tab-f')" class="tab-btn flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200">
+                    <i class="fa-solid fa-filter-circle-xmark"></i> <span>3. Trích Xuất Điểm F (&lt; 3.0)</span>
+                </button>
+                <button id="btn-tab-pdt" onclick="switchTab('tab-pdt')" class="tab-btn hidden flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200">
+                    <i class="fa-solid fa-building-shield"></i> <span>4. Quản Lý Đào Tạo (PĐT)</span>
+                </button>
+                <button id="btn-tab-admin" onclick="switchTab('tab-admin')" class="tab-btn hidden flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200">
+                    <i class="fa-solid fa-users-gear"></i> <span>5. Quản Trị Tài Khoản (Admin)</span>
+                </button>
+            </div>
+
+            <!-- ================= TAB 1: BẢNG ĐIỂM HỌC PHẦN CHI TIẾT ================= -->
+            <section id="tab-detail" class="tab-panel space-y-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Học kỳ</label>
+                                <select id="filter-hk" onchange="renderDetailTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none">
+                                    <option value="ALL">Tất cả học kỳ</option>
+                                    <option value="Học kỳ 1 (2025-2026)" selected>Học kỳ 1 (2025-2026)</option>
+                                    <option value="Học kỳ 2 (2025-2026)">Học kỳ 2 (2025-2026)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Học phần</label>
+                                <select id="filter-course" onchange="renderDetailTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Điểm chữ</label>
+                                <select id="filter-letter" onchange="renderDetailTable()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none">
+                                    <option value="ALL">Tất cả (A, B, C, D, F)</option>
+                                    <option value="A">Điểm A (9.0 - 10)</option>
+                                    <option value="B">Điểm B (7.0 - 8.99)</option>
+                                    <option value="C">Điểm C (5.0 - 6.99)</option>
+                                    <option value="D">Điểm D (3.0 - 4.99)</option>
+                                    <option value="F">Điểm F (&lt; 3.00 - Học lại)</option>
+                                </select>
+                            </div>
+                            <div id="search-box-wrap">
+                                <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Tìm kiếm sinh viên</label>
+                                <input type="text" id="filter-search" oninput="renderDetailTable()" placeholder="Nhập Mã SV hoặc Họ tên..."
+                                    class="px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none w-52">
+                            </div>
+                        </div>
+
+                        <div id="grade-action-bar" class="flex items-center gap-2">
+                            <button onclick="openGradeModal()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-plus"></i> Thêm / Nhập Điểm Học Phần
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-hpuni-900 text-white text-[11px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3.5 px-3 text-center">STT</th>
+                                    <th class="py-3.5 px-3">Mã SV</th>
+                                    <th class="py-3.5 px-3">Họ và tên</th>
+                                    <th class="py-3.5 px-2.5 text-center">Lớp</th>
+                                    <th class="py-3.5 px-3">Học phần</th>
+                                    <th class="py-3.5 px-2 text-center">TC</th>
+                                    <th class="py-3.5 px-2 text-center">CC (20%)</th>
+                                    <th class="py-3.5 px-2 text-center">KT (30%)</th>
+                                    <th class="py-3.5 px-2 text-center">Thi (50%)</th>
+                                    <th class="py-3.5 px-3 text-center bg-hpuni-950 text-amber-300">Điểm HP</th>
+                                    <th class="py-3.5 px-2 text-center">Chữ</th>
+                                    <th class="py-3.5 px-3">Kết luận học phần</th>
+                                    <th class="py-3.5 px-3 text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detail-tbody" class="divide-y divide-slate-200 text-xs sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: TỔNG HỢP ĐIỂM TRUNG BÌNH HỌC KỲ HOẶC PHỔ ĐIỂM BỘ MÔN GIẢNG VIÊN ================= -->
+            <section id="tab-gpa" class="tab-panel hidden space-y-4">
+                <!-- Khung 2A: Bảng Tổng hợp 5 môn (Chỉ hiển thị cho Admin, PĐT, CVHT và Sinh viên cá nhân) -->
+                <div id="gpa-full-container" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900 uppercase">BẢNG TỔNG HỢP ĐIỂM TRUNG BÌNH HỌC KỲ THEO TÍN CHỈ (LỚP CNTT3K25)</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Công thức ĐTB học kỳ có trọng số tín chỉ (Tổng 14 tín chỉ: Triết học 3TC, Thuật toán 2TC, Toán rời rạc 3TC, Tin cơ sở 3TC, Kiến trúc MT 3TC).</p>
+                        </div>
+                        <span class="px-3 py-1.5 rounded-xl bg-sky-50 text-hpuni-600 font-extrabold text-xs border border-sky-200">
+                            <i class="fa-solid fa-award mr-1"></i>Đồng bộ chuẩn Excel CNTT3K25
+                        </span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 mt-4">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-hpuni-900 text-white text-[11px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3.5 px-3 text-center">STT</th>
+                                    <th class="py-3.5 px-3">Mã SV</th>
+                                    <th class="py-3.5 px-3">Họ và tên</th>
+                                    <th class="py-3.5 px-2 text-center">Lớp</th>
+                                    <th class="py-3.5 px-2.5 text-center">Triết học (3TC)</th>
+                                    <th class="py-3.5 px-2.5 text-center">Thuật toán (2TC)</th>
+                                    <th class="py-3.5 px-2.5 text-center">Toán RR (3TC)</th>
+                                    <th class="py-3.5 px-2.5 text-center">Tin CS (3TC)</th>
+                                    <th class="py-3.5 px-2.5 text-center">KTMT (3TC)</th>
+                                    <th class="py-3.5 px-3 text-center bg-hpuni-950 text-amber-300">ĐTB Học Kỳ</th>
+                                    <th class="py-3.5 px-2 text-center">Môn Đạt</th>
+                                    <th class="py-3.5 px-2 text-center">Môn F</th>
+                                    <th class="py-3.5 px-3">Xếp loại học kỳ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gpa-tbody" class="divide-y divide-slate-200 text-xs sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Khung 2B: Thống kê Phổ điểm Học phần Bộ môn (Dành riêng cho Giảng viên - Cô lập không hiển thị môn khác) -->
+                <div id="lecturer-dist-container" class="hidden bg-white rounded-2xl shadow-sm border border-emerald-200 p-5 space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase bg-emerald-600 text-white mb-1.5">
+                                <i class="fa-solid fa-lock"></i> Chế độ cô lập học phần bộ môn
+                            </span>
+                            <h3 id="lecturer-dist-title" class="text-base font-black text-slate-900 uppercase">THỐNG KÊ PHỔ ĐIỂM HỌC PHẦN BỘ MÔN PHỤ TRÁCH</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Giảng viên chỉ xem được thống kê phân loại điểm chữ (A, B, C, D, F) của học phần mình giảng dạy, tuyệt đối không hiển thị điểm các bộ môn khác.</p>
+                        </div>
+                    </div>
+
+                    <div id="lecturer-dist-cards" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-emerald-950 text-white text-[11px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3 px-3 text-center">STT</th>
+                                    <th class="py-3 px-3">Mã SV</th>
+                                    <th class="py-3 px-3">Họ và tên</th>
+                                    <th class="py-3 px-2.5 text-center">Lớp</th>
+                                    <th class="py-3 px-3">Học phần bộ môn</th>
+                                    <th class="py-3 px-2 text-center">Số TC</th>
+                                    <th class="py-3 px-2.5 text-center">Điểm CC</th>
+                                    <th class="py-3 px-2.5 text-center">Điểm KT</th>
+                                    <th class="py-3 px-2.5 text-center">Điểm Thi</th>
+                                    <th class="py-3 px-3 text-center bg-emerald-900 text-amber-300">Điểm Tổng Kết</th>
+                                    <th class="py-3 px-2.5 text-center">Điểm Chữ</th>
+                                    <th class="py-3 px-3">Kết luận học phần</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lecturer-dist-tbody" class="divide-y divide-slate-200 text-xs sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: TRÍCH XUẤT DANH SÁCH SINH VIÊN BỊ ĐIỂM F (< 3.00) ================= -->
+            <section id="tab-f" class="tab-panel hidden space-y-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-rose-200 p-5 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-rose-100">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase bg-rose-600 text-white mb-1.5">
+                                <i class="fa-solid fa-bell"></i> Cảnh báo học vụ bắt buộc học lại
+                            </span>
+                            <h3 class="text-base font-black text-rose-950 uppercase">DANH SÁCH TRÍCH XUẤT SINH VIÊN BỊ ĐIỂM F (ĐIỂM TỔNG KẾT HỌC PHẦN &lt; 3.00)</h3>
+                            <p class="text-xs text-slate-600 mt-0.5">Tự động lọc toàn bộ các học phần có điểm tổng kết dưới 3.00 để thông báo đăng ký học lại.</p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <select id="f-filter-course" onchange="renderFTable()" class="px-3 py-2 rounded-xl border border-rose-300 text-xs font-bold bg-rose-50 text-rose-950 outline-none"></select>
+                            <button onclick="exportFToCSV()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow flex items-center gap-2 cursor-pointer">
+                                <i class="fa-solid fa-file-csv text-sm"></i> Xuất Báo Cáo Điểm F (Excel / CSV)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-rose-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-rose-900 text-white text-[11px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3.5 px-3 text-center">Mã F</th>
+                                    <th class="py-3.5 px-3">Mã SV</th>
+                                    <th class="py-3.5 px-3">Họ và tên</th>
+                                    <th class="py-3.5 px-2.5 text-center">Lớp</th>
+                                    <th class="py-3.5 px-3">Học kỳ</th>
+                                    <th class="py-3.5 px-3">Học phần bị điểm F</th>
+                                    <th class="py-3.5 px-2 text-center">TC</th>
+                                    <th class="py-3.5 px-2 text-center">CC</th>
+                                    <th class="py-3.5 px-2 text-center">KT</th>
+                                    <th class="py-3.5 px-2 text-center">Thi</th>
+                                    <th class="py-3.5 px-3 text-center bg-rose-950 text-amber-300">Điểm HP</th>
+                                    <th class="py-3.5 px-2 text-center">Điểm Chữ</th>
+                                    <th class="py-3.5 px-3">Trạng thái xử lý</th>
+                                </tr>
+                            </thead>
+                            <tbody id="f-tbody" class="divide-y divide-rose-200 text-xs sm:text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: QUẢN LÝ ĐÀO TẠO (PHÒNG ĐÀO TẠO & ADMIN) ================= -->
+            <section id="tab-pdt" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chốt & Khóa sổ điểm học kỳ -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-indigo-200 p-5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-100 text-indigo-800">
+                                    <i class="fa-solid fa-shield-halved mr-1"></i>Kiểm soát sổ điểm học kỳ
+                                </span>
+                                <span id="pdt-lock-status-badge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">
+                                    Đang mở nhập điểm
+                                </span>
+                            </div>
+                            <h3 class="text-base font-black text-slate-900 uppercase">CHỐT &amp; KHÓA BẢNG ĐIỂM TOÀN HỌC KỲ</h3>
+                            <p class="text-xs text-slate-600 mt-1">Khi Phòng Đào tạo khóa sổ điểm, các tài khoản Giảng viên sẽ chuyển sang chế độ Chỉ đọc (Read-only) và không thể tự ý sửa/xóa điểm.</p>
+                        </div>
+                        <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-500">Học kỳ áp dụng: Học kỳ 1 (2025-2026)</span>
+                            <button id="btn-toggle-lock" onclick="toggleSemesterLock()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow transition flex items-center gap-2 cursor-pointer">
+                                <i class="fa-solid fa-lock"></i> Khóa Sổ Điểm Học Kỳ Ngay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Thêm hồ sơ sinh viên mới -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <h3 class="text-base font-black text-slate-900 uppercase mb-1">THÊM HỒ SƠ SINH VIÊN MỚI (TỰ ĐỘNG CẤP TÀI KHOẢN)</h3>
+                        <p class="text-xs text-slate-500 mb-4">Sinh viên mới được thêm sẽ tự động có tài khoản đăng nhập bằng Mã SV với mật khẩu mặc định là <code class="font-bold text-indigo-600">1</code>.</p>
+                        <form onsubmit="addNewStudent(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="text" id="new-sv-ma" required placeholder="Mã SV (VD: 241321117)" class="px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none">
+                            <input type="text" id="new-sv-ten" required placeholder="Họ và tên sinh viên" class="px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none">
+                            <input type="text" id="new-sv-lop" value="CNTT3K25" required class="px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none">
+                            <button type="submit" class="sm:col-span-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow cursor-pointer">
+                                <i class="fa-solid fa-user-plus mr-1"></i> Thêm Sinh Viên &amp; Khởi Tạo Tài Khoản
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Danh mục 5 Học phần chuẩn & Phân công Giảng viên bộ môn -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div>
+                            <h3 class="text-sm font-black uppercase text-slate-800">DANH MỤC HỌC PHẦN, PHÂN CÔNG GIẢNG VIÊN BỘ MÔN &amp; KHÓA ĐIỂM TỪNG MÔN</h3>
+                            <p class="text-xs text-slate-500">Phòng Đào tạo và Quản trị viên có thể phân công giảng viên phụ trách từng học phần hoặc khóa/mở khóa điểm riêng từng môn.</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs border border-indigo-200">
+                            Tổng: 5 Học phần (14 Tín chỉ)
+                        </span>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-800 text-white uppercase font-extrabold">
+                                    <th class="py-3 px-3">Mã HP</th>
+                                    <th class="py-3 px-3">Tên học phần</th>
+                                    <th class="py-3 px-2.5 text-center">Số TC</th>
+                                    <th class="py-3 px-3">Giảng viên bộ môn phụ trách</th>
+                                    <th class="py-3 px-3">Tài khoản GV</th>
+                                    <th class="py-3 px-3 text-center">Trạng thái khóa môn</th>
+                                    <th class="py-3 px-3 text-center">Thao tác PĐT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-tbody" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: QUẢN TRỊ TÀI KHOẢN & NHẬT KÝ HỆ THỐNG (ADMIN) ================= -->
+            <section id="tab-admin" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Bảng quản lý tài khoản người dùng -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-purple-200 p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <div>
+                                <h3 class="text-base font-black text-slate-900 uppercase">QUẢN LÝ TÀI KHOẢN, PHÂN QUYỀN &amp; GÁN BỘ MÔN GIẢNG VIÊN</h3>
+                                <p class="text-xs text-slate-500">Quản trị viên cấp tài khoản, phân công học phần giảng dạy cho từng Giảng viên và khóa/mở khóa người dùng.</p>
+                            </div>
+                            <button onclick="openUserModal()" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-user-plus"></i> Cấp / Phân Quyền Tài Khoản
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-purple-950 text-white uppercase font-extrabold">
+                                        <th class="py-3 px-3">Tài khoản</th>
+                                        <th class="py-3 px-3">Tên hiển thị hệ thống</th>
+                                        <th class="py-3 px-3">Vai trò &amp; Học phần phụ trách</th>
+                                        <th class="py-3 px-2.5 text-center">Trạng thái</th>
+                                        <th class="py-3 px-3 text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-tbody" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Nhật ký Audit Log -->
+                    <div class="bg-slate-950 text-slate-100 rounded-2xl shadow-sm border border-slate-800 p-5 flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                            <h3 class="text-sm font-black uppercase text-cyan-400">
+                                <i class="fa-solid fa-terminal mr-1.5"></i>Nhật ký hệ thống (Audit Log)
+                            </h3>
+                            <span class="text-[10px] font-mono bg-slate-800 px-2 py-0.5 rounded text-emerald-400">Realtime</span>
+                        </div>
+                        <div id="audit-log-box" class="flex-1 font-mono text-[11px] space-y-2 overflow-y-auto max-h-96 pr-1"></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODAL 1: THÊM / SỬA ĐIỂM HỌC PHẦN ================= -->
+    <div id="grade-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="bg-hpuni-900 px-6 py-4 text-white flex items-center justify-between">
+                <h3 id="grade-modal-title" class="font-extrabold text-sm uppercase">Cập nhật điểm học phần</h3>
+                <button onclick="closeGradeModal()" class="text-white/70 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveGrade(event)" class="p-6 space-y-4">
+                <input type="hidden" id="edit-grade-id">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Sinh viên:</label>
+                    <select id="modal-sv" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Học phần phụ trách:</label>
+                    <select id="modal-course" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none"></select>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-extrabold uppercase text-slate-600 mb-1">CC (20%)</label>
+                        <input type="number" id="modal-cc" step="0.01" min="0" max="10" required oninput="previewModalScore()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold text-center outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-extrabold uppercase text-slate-600 mb-1">KT (30%)</label>
+                        <input type="number" id="modal-kt" step="0.01" min="0" max="10" required oninput="previewModalScore()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold text-center outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-extrabold uppercase text-slate-600 mb-1">Thi (50%)</label>
+                        <input type="number" id="modal-thi" step="0.01" min="0" max="10" required oninput="previewModalScore()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold text-center outline-none">
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
+                    <span class="font-bold text-slate-600">Dự kiến Điểm HP &amp; Điểm chữ:</span>
+                    <span id="modal-preview-val" class="font-black text-hpuni-900 text-sm">--</span>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeGradeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow cursor-pointer">Lưu kết quả</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 2: ĐỔI MẬT KHẨU CÁ NHÂN ================= -->
+    <div id="pass-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full overflow-hidden">
+            <div class="bg-hpuni-900 px-6 py-4 text-white flex items-center justify-between">
+                <h3 class="font-extrabold text-sm uppercase"><i class="fa-solid fa-key text-amber-400 mr-1.5"></i>Đổi mật khẩu cá nhân</h3>
+                <button onclick="closePasswordModal()" class="text-white/70 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveNewPassword(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Mật khẩu hiện tại:</label>
+                    <input type="password" id="old-pass" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Mật khẩu mới:</label>
+                    <input type="password" id="new-pass" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-bold outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow cursor-pointer">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 3: CẤP / CẬP NHẬT TÀI KHOẢN & PHÂN CÔNG HỌC PHẦN GIẢNG VIÊN (ADMIN) ================= -->
+    <div id="user-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="bg-purple-900 px-6 py-4 text-white flex items-center justify-between">
+                <h3 id="user-modal-title" class="font-extrabold text-sm uppercase">Cấp tài khoản &amp; Phân quyền</h3>
+                <button onclick="closeUserModal()" class="text-white/70 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveNewUser(event)" class="p-6 space-y-4">
+                <input type="hidden" id="u-edit-mode" value="create">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tên đăng nhập:</label>
+                    <input type="text" id="u-username" required placeholder="VD: gv06 hoặc mã SV..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tên hiển thị trên hệ thống:</label>
+                    <input type="text" id="u-fullname" required placeholder="Nhập tên hiển thị..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Vai trò phân quyền:</label>
+                        <select id="u-role" onchange="toggleUserCourseAssignBox()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 outline-none">
+                            <option value="gv">Giảng viên bộ môn</option>
+                            <option value="cvht">Cố vấn học tập</option>
+                            <option value="pdt">Phòng Đào tạo</option>
+                            <option value="admin">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Mật khẩu:</label>
+                        <input type="text" id="u-pass" value="1" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold outline-none">
+                    </div>
+                </div>
+
+                <!-- Chọn học phần bộ môn phụ trách (chỉ hiện khi vai trò là Giảng viên) -->
+                <div id="u-courses-box" class="p-3.5 rounded-xl bg-purple-50 border border-purple-200 space-y-2">
+                    <label class="block text-[11px] font-black uppercase text-purple-900">
+                        <i class="fa-solid fa-book-open-reader mr-1"></i>Học phần bộ môn được phân công giảng dạy:
+                    </label>
+                    <p class="text-[11px] text-purple-700">Giảng viên sẽ chỉ nhìn thấy và quản lý điểm đúng các học phần được tích chọn dưới đây:</p>
+                    <div id="u-courses-checkboxes" class="space-y-1.5 pt-1 max-h-36 overflow-y-auto"></div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow cursor-pointer">Lưu cấu hình</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT XỬ LÝ NGHIỆP VỤ TOÀN DIỆN ================= -->
+    <script>
+        const STORAGE_VERSION_KEY = "HPUNI_GRADE_SYSTEM_V10_STRICT";
+
+        // Xóa sạch cache cũ để không bao giờ còn lưu tên cũ trong trình duyệt
+        try {
+            if (localStorage.getItem("HPUNI_ACTIVE_VERSION") !== STORAGE_VERSION_KEY) {
+                localStorage.clear();
+                sessionStorage.clear();
+                localStorage.setItem("HPUNI_ACTIVE_VERSION", STORAGE_VERSION_KEY);
+            }
+        } catch (err) {}
+
+        // 1. Danh mục 5 Học phần chuẩn (Tổng 14 tín chỉ)
+        const COURSES = [
+            { code: "HP01", name: "Triết học Mác - Lênin",         tc: 3, dept: "Bộ môn Lý luận Chính trị", lecturerAcc: "gv01", lecturerName: "Giảng viên Bộ môn Lý luận Chính trị", locked: false },
+            { code: "HP02", name: "Nhập môn thuật toán",           tc: 2, dept: "Bộ môn Khoa học Máy tính", lecturerAcc: "gv",   lecturerName: "Giảng viên Bộ môn (gv / gv02)",       locked: false },
+            { code: "HP03", name: "Toán học rời rạc",              tc: 3, dept: "Bộ môn Toán - Tin",        lecturerAcc: "gv03", lecturerName: "Giảng viên Bộ môn Toán - Tin",        locked: false },
+            { code: "HP04", name: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, dept: "Bộ môn Tin học Cơ sở",     lecturerAcc: "gv04", lecturerName: "Giảng viên Bộ môn Tin học Cơ sở",     locked: false },
+            { code: "HP05", name: "Tổ chức và kiến trúc máy tính", tc: 3, dept: "Bộ môn Kỹ thuật Máy tính", lecturerAcc: "gv05", lecturerName: "Giảng viên Bộ môn Kỹ thuật Máy tính", locked: false }
+        ];
+
+        // 2. Danh sách 6 Sinh viên thực nghiệm lớp CNTT3K25
+        let STUDENTS = [
+            { ma: "241321112",  ten: "Nguyễn Thanh Thưởng", lop: "CNTT3K25" },
+            { ma: "241321111",  ten: "Trần Tăng Vinh",      lop: "CNTT3K25" },
+            { ma: "2413211113", ten: "Lê Xuân Hiếu",        lop: "CNTT3K25" },
+            { ma: "2413211114", ten: "Trần Thành Khang",    lop: "CNTT3K25" },
+            { ma: "241321115",  ten: "Trần Văn Nam",        lop: "CNTT3K25" },
+            { ma: "241321116",  ten: "Bùi Xuân Dũng",       lop: "CNTT3K25" }
+        ];
+
+        // 3. Hệ thống Tài khoản phân quyền chuẩn xác (admin hiển thị "Quản trị viên (Admin)" + "Quản trị hệ thống (ADMIN01)")
+        let USERS = {
+            // Quản trị viên & Phòng ban (TUYỆT ĐỐI KHÔNG ĐỂ TÊN SINH VIÊN Ở TÀI KHOẢN ADMIN)
+            "admin":      { pass: "1", altPass: "123456", roleKey: "admin", code: "ADMIN01", name: "Quản trị viên (Admin)",   roleName: "Quản trị hệ thống (ADMIN01)", locked: false, isSv: false },
+            "pdt":        { pass: "1", altPass: "123456", roleKey: "pdt",   code: "PDT01",   name: "Phòng Đào tạo",           roleName: "Cán bộ Phòng Đào tạo (PDT01)", locked: false, isSv: false },
+            "cvht":       { pass: "1", altPass: "123456", roleKey: "cvht",  code: "CVHT01",  name: "Cố vấn học tập CNTT3K25", roleName: "Cố vấn học tập (CVHT01)",     locked: false, isSv: false },
+
+            // Các tài khoản Giảng viên Bộ môn (Mỗi GV chỉ xem và quản lý đúng học phần của mình)
+            "gv":         { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV00",    name: "Giảng viên Bộ môn",                 roleName: "Giảng viên (Phụ trách HP02)", locked: false, isSv: false, assignedCourses: ["HP02"] },
+            "gv01":       { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV01",    name: "GV Bộ môn Lý luận Chính trị",       roleName: "Giảng viên (Phụ trách HP01)", locked: false, isSv: false, assignedCourses: ["HP01"] },
+            "gv02":       { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV02",    name: "GV Bộ môn Khoa học Máy tính",       roleName: "Giảng viên (Phụ trách HP02)", locked: false, isSv: false, assignedCourses: ["HP02"] },
+            "gv03":       { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV03",    name: "GV Bộ môn Toán - Tin",              roleName: "Giảng viên (Phụ trách HP03)", locked: false, isSv: false, assignedCourses: ["HP03"] },
+            "gv04":       { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV04",    name: "GV Bộ môn Tin học Cơ sở",           roleName: "Giảng viên (Phụ trách HP04)", locked: false, isSv: false, assignedCourses: ["HP04"] },
+            "gv05":       { pass: "1", altPass: "123456", roleKey: "gv",    code: "GV05",    name: "GV Bộ môn Kỹ thuật Máy tính",       roleName: "Giảng viên (Phụ trách HP05)", locked: false, isSv: false, assignedCourses: ["HP05"] },
+
+            // Các tài khoản Sinh viên độc lập (Nguyễn Thanh Thưởng chỉ thuộc về mã SV 241321112)
+            "241321112":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "241321112",  name: "Nguyễn Thanh Thưởng", roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "241321112" },
+            "241321111":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "241321111",  name: "Trần Tăng Vinh",      roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "241321111" },
+            "2413211113": { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211113", name: "Lê Xuân Hiếu",        roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211113" },
+            "241321113":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211113", name: "Lê Xuân Hiếu",        roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211113" },
+            "2413211114": { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211114", name: "Trần Thành Khang",    roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211114" },
+            "241321114":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211114", name: "Trần Thành Khang",    roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211114" },
+            "241321115":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "241321115",  name: "Trần Văn Nam",        roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "241321115" },
+            "241321116":  { pass: "1", altPass: "123456", roleKey: "sv",    code: "241321116",  name: "Bùi Xuân Dũng",       roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "241321116" },
+            "sv":         { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211113", name: "Lê Xuân Hiếu",        roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211113" },
+            "sv01":       { pass: "1", altPass: "123456", roleKey: "sv",    code: "2413211113", name: "Lê Xuân Hiếu",        roleName: "Sinh viên (CNTT3K25)", locked: false, isSv: true, maSv: "2413211113" }
+        };
+
+        // 4. Bộ 30 bản ghi điểm học phần chuẩn của 6 sinh viên lớp CNTT3K25
+        let GRADES = [
+            // 1. Nguyễn Thanh Thưởng (241321112) -> ĐTB: 7.46 (0 F)
+            { id: 1,  maSv: "241321112", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 6.6, kt: 6.8, thi: 8.98 },
+            { id: 2,  maSv: "241321112", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 6.7, kt: 6.7, thi: 8.70 },
+            { id: 3,  maSv: "241321112", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 5.6, kt: 6.9, thi: 6.62 },
+            { id: 4,  maSv: "241321112", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 8.9, kt: 9.6, thi: 7.68 },
+            { id: 5,  maSv: "241321112", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 5.8, kt: 5.5, thi: 8.08 },
+
+            // 2. Trần Tăng Vinh (241321111) -> ĐTB: 7.45 (0 F)
+            { id: 6,  maSv: "241321111", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 8.3, kt: 7.5, thi: 8.58 },
+            { id: 7,  maSv: "241321111", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 7.8, kt: 7.9, thi: 6.54 },
+            { id: 8,  maSv: "241321111", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 7.0, kt: 5.7, thi: 7.68 },
+            { id: 9,  maSv: "241321111", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 6.7, kt: 7.6, thi: 8.16 },
+            { id: 10, maSv: "241321111", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 8.0, kt: 6.2, thi: 7.28 },
+
+            // 3. Lê Xuân Hiếu (2413211113) -> ĐTB: 5.31 (1 F: Nhập môn thuật toán HP02 = 2.20)
+            { id: 11, maSv: "2413211113", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 4.7, kt: 5.7, thi: 5.10 },
+            { id: 12, maSv: "2413211113", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 2.3, kt: 1.2, thi: 2.76 },
+            { id: 13, maSv: "2413211113", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 5.7, kt: 5.7, thi: 6.70 },
+            { id: 14, maSv: "2413211113", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 7.1, kt: 8.0, thi: 6.76 },
+            { id: 15, maSv: "2413211113", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 5.8, kt: 4.2, thi: 4.56 },
+
+            // 4. Trần Thành Khang (2413211114) -> ĐTB: 6.42 (1 F: Toán học rời rạc HP03 = 2.50)
+            { id: 16, maSv: "2413211114", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 7.9, kt: 9.3, thi: 7.26 },
+            { id: 17, maSv: "2413211114", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 6.4, kt: 6.5, thi: 8.14 },
+            { id: 18, maSv: "2413211114", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 2.6, kt: 1.3, thi: 3.18 },
+            { id: 19, maSv: "2413211114", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 7.7, kt: 7.4, thi: 9.08 },
+            { id: 20, maSv: "2413211114", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 6.4, kt: 6.3, thi: 6.26 },
+
+            // 5. Trần Văn Nam (241321115) -> ĐTB: 4.18 (2 F: Triết học HP01 = 2.00, Toán rời rạc HP03 = 2.49)
+            { id: 21, maSv: "241321115", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 1.2, kt: 0.8, thi: 3.04 },
+            { id: 22, maSv: "241321115", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 4.3, kt: 4.4, thi: 7.04 },
+            { id: 23, maSv: "241321115", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 3.6, kt: 3.5, thi: 1.44 },
+            { id: 24, maSv: "241321115", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 5.8, kt: 7.0, thi: 6.88 },
+            { id: 25, maSv: "241321115", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 3.9, kt: 3.8, thi: 5.16 },
+
+            // 6. Bùi Xuân Dũng (241321116) -> ĐTB: 8.83 (0 F)
+            { id: 26, maSv: "241321116", hk: "Học kỳ 1 (2025-2026)", maHp: "HP01", mon: "Triết học Mác - Lênin",         tc: 3, cc: 7.6, kt: 9.3, thi: 9.38 },
+            { id: 27, maSv: "241321116", hk: "Học kỳ 1 (2025-2026)", maHp: "HP02", mon: "Nhập môn thuật toán",           tc: 2, cc: 7.7, kt: 8.4, thi: 9.58 },
+            { id: 28, maSv: "241321116", hk: "Học kỳ 1 (2025-2026)", maHp: "HP03", mon: "Toán học rời rạc",              tc: 3, cc: 7.4, kt: 8.1, thi: 8.78 },
+            { id: 29, maSv: "241321116", hk: "Học kỳ 1 (2025-2026)", maHp: "HP04", mon: "Tin học cơ sở (Chuẩn MOS)",     tc: 3, cc: 8.7, kt: 9.5, thi: 9.82 },
+            { id: 30, maSv: "241321116", hk: "Học kỳ 1 (2025-2026)", maHp: "HP05", mon: "Tổ chức và kiến trúc máy tính", tc: 3, cc: 7.0, kt: 9.0, thi: 8.80 }
+        ];
+
+        let currentUserKey = null;
+        let currentUser = null;
+        let isSemesterLocked = false;
+        let AUDIT_LOGS = [
+            "[19:35:00] KHỞI ĐỘNG: Hệ thống Quản lý Điểm HPUNI sẵn sàng.",
+            "[19:35:01] ĐỒNG BỘ: Nạp thành công 30 bản ghi lớp CNTT3K25 (14 tín chỉ).",
+            "[19:35:02] BẢO MẬT: Kích hoạt cô lập học phần giảng dạy cho Giảng viên (gv, gv01..gv05)."
+        ];
+
+        // Lấy danh sách các học phần mà Giảng viên đang đăng nhập được phép quản lý
+        function getLecturerAllowedCourses() {
+            if (!currentUser || currentUser.roleKey !== "gv") return COURSES;
+            const codes = currentUser.assignedCourses || [];
+            return COURSES.filter(c => codes.includes(c.code));
+        }
+
+        // Kiểm tra một bản ghi điểm có thuộc quyền xem/xử lý của người dùng đang đăng nhập hay không
+        function isRecordAllowedForCurrentUser(gradeRec) {
+            if (!currentUser) return false;
+            if (currentUser.isSv) {
+                return gradeRec.maSv === currentUser.maSv;
+            }
+            if (currentUser.roleKey === "gv") {
+                const allowedCodes = currentUser.assignedCourses || [];
+                const allowedNames = COURSES.filter(c => allowedCodes.includes(c.code)).map(c => c.name);
+                return allowedCodes.includes(gradeRec.maHp) || allowedNames.includes(gradeRec.mon);
+            }
+            return true;
+        }
+
+        function isCourseLockedForEdit(gradeOrCourseName) {
+            if (isSemesterLocked) return true;
+            const cObj = COURSES.find(c => c.code === gradeOrCourseName || c.name === gradeOrCourseName);
+            return cObj ? !!cObj.locked : false;
+        }
+
+        // Ghi nhận Audit Log
+        function addAuditLog(action) {
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0];
+            const actor = currentUser ? `${currentUser.name}` : "Hệ thống";
+            AUDIT_LOGS.unshift(`[${timeStr}] ${actor}: ${action}`);
+            renderAuditLogs();
+        }
+
+        // Hiển thị thông báo Toast
+        function showToast(msg, type = "success") {
+            const box = document.getElementById("toast-box");
+            const el = document.createElement("div");
+            const bg = type === "success" ? "bg-emerald-600" : (type === "warning" ? "bg-amber-500 text-slate-950" : "bg-rose-600");
+            const icon = type === "success" ? "fa-circle-check" : "fa-triangle-exclamation";
+            el.className = `${bg} text-white p-3.5 rounded-2xl shadow-2xl text-xs font-extrabold flex items-center gap-2.5 border border-white/20 pointer-events-auto transition-all`;
+            el.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${msg}</span>`;
+            box.appendChild(el);
+            setTimeout(() => el.remove(), 3200);
+        }
+
+        // Công thức tính điểm học phần chuẩn (20% CC + 30% KT + 50% Thi) và quy đổi A, B, C, D, F (< 3.00 là F)
+        function evaluateScore(cc, kt, thi) {
+            const raw = Math.round((cc * 0.20 + kt * 0.30 + thi * 0.50) * 10000) / 10000;
+            const hp = Math.round(raw * 100) / 100;
+            let letter = "F";
+            let status = "Không đạt - Học lại (F)";
+            if (raw >= 9.0) {
+                letter = "A"; status = "Đạt (Xuất sắc / Giỏi)";
+            } else if (raw >= 7.0) {
+                letter = "B"; status = "Đạt (Khá)";
+            } else if (raw >= 5.0) {
+                letter = "C"; status = "Đạt (Trung bình)";
+            } else if (raw >= 3.0) {
+                letter = "D"; status = "Đạt (Trung bình yếu)";
+            }
+            return { hp, raw, letter, status };
+        }
+
+        // Xử lý Đăng nhập
+        function handleLogin(e) {
+            e.preventDefault();
+            const uInput = document.getElementById("login-user").value.trim().toLowerCase();
+            const pInput = document.getElementById("login-pass").value.trim();
+
+            const acc = USERS[uInput];
+            if (!acc || (acc.pass !== pInput && acc.altPass !== pInput)) {
+                showToast("Từ chối truy cập: Tài khoản hoặc mật khẩu không chính xác!", "error");
+                return;
+            }
+
+            if (acc.locked) {
+                showToast("Tài khoản này đã bị Quản trị viên khóa quyền truy cập!", "error");
+                return;
+            }
+
+            currentUserKey = uInput;
+            currentUser = acc;
+
+            document.getElementById("login-view").classList.add("hidden");
+            document.getElementById("app-view").classList.remove("hidden");
+
+            updateHeaderUserBadge();
+            configureRolePermissions();
+            populateCourseFilters();
+            refreshAllViews();
+            switchTab("tab-detail");
+
+            addAuditLog(`Đăng nhập thành công (${acc.roleName}).`);
+            showToast(`Xin chào ${acc.name}! Đã đăng nhập hệ thống.`);
+        }
+
+        // Cập nhật Badge thông tin người dùng góc phải Header chuẩn xác theo đúng yêu cầu
+        function updateHeaderUserBadge() {
+            const nameEl = document.getElementById("header-user-name");
+            const roleEl = document.getElementById("header-user-role");
+            if (!currentUser) return;
+
+            if (currentUser.roleKey === "admin") {
+                // Dòng trắng phía trên: Quản trị viên (Admin) | Dòng vàng phía dưới: Quản trị hệ thống (ADMIN01)
+                nameEl.textContent = "Quản trị viên (Admin)";
+                roleEl.textContent = "Quản trị hệ thống (ADMIN01)";
+            } else if (currentUser.roleKey === "pdt") {
+                nameEl.textContent = "Phòng Đào tạo";
+                roleEl.textContent = "Cán bộ Phòng Đào tạo (PDT01)";
+            } else if (currentUser.roleKey === "cvht") {
+                nameEl.textContent = "Cố vấn học tập CNTT3K25";
+                roleEl.textContent = "Cố vấn học tập (CVHT01)";
+            } else if (currentUser.roleKey === "gv") {
+                const allowed = getLecturerAllowedCourses();
+                const courseCodes = allowed.map(c => `${c.code} - ${c.name}`).join(", ");
+                nameEl.textContent = currentUser.name;
+                roleEl.textContent = `Giảng viên (${courseCodes || "Chưa gán môn"})`;
+            } else if (currentUser.isSv) {
+                nameEl.textContent = currentUser.name;
+                roleEl.textContent = `Sinh viên (${currentUser.maSv} - CNTT3K25)`;
+            } else {
+                nameEl.textContent = currentUser.name;
+                roleEl.textContent = currentUser.roleName;
+            }
+        }
+
+        // Cấu hình quyền hạn hiển thị cho 5 nhóm tác nhân
+        function configureRolePermissions() {
+            const role = currentUser.roleKey;
+            const btnPdt = document.getElementById("btn-tab-pdt");
+            const btnAdmin = document.getElementById("btn-tab-admin");
+            const btnTabDetail = document.getElementById("btn-tab-detail");
+            const btnTabGpa = document.getElementById("btn-tab-gpa");
+            const btnTabF = document.getElementById("btn-tab-f");
+            const actionBar = document.getElementById("grade-action-bar");
+            const svBanner = document.getElementById("student-isolation-banner");
+            const gvBanner = document.getElementById("lecturer-isolation-banner");
+            const searchWrap = document.getElementById("search-box-wrap");
+            const gpaFullBox = document.getElementById("gpa-full-container");
+            const gvDistBox = document.getElementById("lecturer-dist-container");
+
+            btnPdt.classList.add("hidden");
+            btnAdmin.classList.add("hidden");
+            svBanner.classList.add("hidden");
+            gvBanner.classList.add("hidden");
+            searchWrap.classList.remove("hidden");
+            gpaFullBox.classList.remove("hidden");
+            gvDistBox.classList.add("hidden");
+
+            btnTabDetail.innerHTML = `<i class="fa-solid fa-list-check"></i> <span>1. Bảng Điểm Học Phần Chi Tiết</span>`;
+            btnTabGpa.innerHTML = `<i class="fa-solid fa-chart-line"></i> <span>2. Tổng Hợp ĐTB Học Kỳ</span>`;
+            btnTabF.innerHTML = `<i class="fa-solid fa-filter-circle-xmark"></i> <span>3. Trích Xuất Điểm F (&lt; 3.0)</span>`;
+
+            if (role === "admin") {
+                btnPdt.classList.remove("hidden");
+                btnAdmin.classList.remove("hidden");
+                actionBar.classList.remove("hidden");
+            } else if (role === "pdt") {
+                btnPdt.classList.remove("hidden");
+                actionBar.classList.remove("hidden");
+            } else if (role === "gv") {
+                const allowed = getLecturerAllowedCourses();
+                const courseNames = allowed.map(c => `${c.code} - ${c.name} (${c.tc} TC)`).join("; ");
+                const allLocked = isSemesterLocked || (allowed.length > 0 && allowed.every(c => c.locked));
+
+                actionBar.classList.toggle("hidden", allLocked);
+                gvBanner.classList.remove("hidden");
+                // Giảng viên bộ môn không xem bảng tổng hợp 5 môn của các GV khác, chỉ xem thống kê phổ điểm môn mình dạy
+                gpaFullBox.classList.add("hidden");
+                gvDistBox.classList.remove("hidden");
+
+                document.getElementById("lecturer-banner-title").textContent =
+                    `CHẾ ĐỘ GIẢNG VIÊN BỘ MÔN — ${currentUser.name.toUpperCase()}`;
+                document.getElementById("lecturer-banner-desc").textContent =
+                    `Khoanh vùng học phần giảng dạy: Bạn chỉ xem, lọc, nhập/sửa điểm và trích xuất điểm F của học phần [${courseNames || "Chưa được phân công"}].`;
+                document.getElementById("lecturer-course-badge").innerHTML =
+                    `<i class="fa-solid fa-book-bookmark mr-1"></i>Phụ trách: ${allowed.map(c => c.code).join(", ") || "N/A"}`;
+
+                btnTabDetail.innerHTML = `<i class="fa-solid fa-list-check"></i> <span>1. Bảng Điểm Học Phần Giảng Dạy</span>`;
+                btnTabGpa.innerHTML = `<i class="fa-solid fa-chart-column"></i> <span>2. Thống Kê Học Phần Phụ Trách</span>`;
+                btnTabF.innerHTML = `<i class="fa-solid fa-filter-circle-xmark"></i> <span>3. Trích Xuất Điểm F Bộ Môn</span>`;
+            } else if (role === "cvht") {
+                actionBar.classList.add("hidden");
+            } else if (role === "sv") {
+                actionBar.classList.add("hidden");
+                svBanner.classList.remove("hidden");
+                searchWrap.classList.add("hidden");
+                document.getElementById("student-banner-desc").textContent =
+                    `Sinh viên: ${currentUser.name} (Mã SV: ${currentUser.maSv}) — Hệ thống chỉ hiển thị 5 môn học và kết quả học tập của riêng bạn.`;
+            }
+        }
+
+        // Xử lý Đăng xuất
+        function handleLogout() {
+            addAuditLog("Đăng xuất khỏi hệ thống.");
+            currentUser = null;
+            currentUserKey = null;
+            document.getElementById("app-view").classList.add("hidden");
+            document.getElementById("login-view").classList.remove("hidden");
+            document.getElementById("login-user").value = "";
+            document.getElementById("login-pass").value = "";
+            showToast("Đã đăng xuất khỏi hệ thống an toàn!");
+        }
+
+        // Chuyển đổi Tab
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+            document.getElementById(tabId).classList.remove("hidden");
+
+            const tabs = [
+                { id: "tab-detail", btn: "btn-tab-detail", active: "bg-hpuni-900 text-white shadow", inactive: "text-slate-600 hover:bg-slate-100" },
+                { id: "tab-gpa",    btn: "btn-tab-gpa",    active: "bg-hpuni-900 text-white shadow", inactive: "text-slate-600 hover:bg-slate-100" },
+                { id: "tab-f",      btn: "btn-tab-f",      active: "bg-rose-600 text-white shadow",  inactive: "text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200" },
+                { id: "tab-pdt",    btn: "btn-tab-pdt",    active: "bg-indigo-700 text-white shadow", inactive: "text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200" },
+                { id: "tab-admin",  btn: "btn-tab-admin",  active: "bg-purple-700 text-white shadow", inactive: "text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200" }
+            ];
+
+            tabs.forEach(t => {
+                const el = document.getElementById(t.btn);
+                if (!el || el.classList.contains("hidden")) return;
+                el.className = `tab-btn flex-1 min-w-[175px] py-2.5 px-3.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${t.id === tabId ? t.active : t.inactive}`;
+            });
+        }
+
+        // Đổ dữ liệu vào Dropdown Học phần (Khoanh vùng chỉ hiển thị môn Giảng viên phụ trách)
+        function populateCourseFilters() {
+            const cFilter = document.getElementById("filter-course");
+            const fCourse = document.getElementById("f-filter-course");
+            const modalCourse = document.getElementById("modal-course");
+
+            if (currentUser && currentUser.roleKey === "gv") {
+                const allowed = getLecturerAllowedCourses();
+                if (allowed.length === 1) {
+                    const only = allowed[0];
+                    cFilter.innerHTML = `<option value="${only.name}" selected>🔒 ${only.code} - ${only.name} (${only.tc} TC)</option>`;
+                    fCourse.innerHTML = `<option value="${only.name}" selected>🔒 ${only.code} - ${only.name}</option>`;
+                    modalCourse.innerHTML = `<option value="${only.name}" selected>${only.code} - ${only.name} (${only.tc} tín chỉ)</option>`;
+                } else {
+                    cFilter.innerHTML = `<option value="ALL">Tất cả học phần phụ trách (${allowed.length})</option>` +
+                        allowed.map(c => `<option value="${c.name}">${c.code} - ${c.name} (${c.tc} TC)</option>`).join("");
+                    fCourse.innerHTML = `<option value="ALL">Tất cả học phần phụ trách (${allowed.length})</option>` +
+                        allowed.map(c => `<option value="${c.name}">${c.code} - ${c.name}</option>`).join("");
+                    modalCourse.innerHTML = allowed.map(c => `<option value="${c.name}">${c.code} - ${c.name} (${c.tc} tín chỉ)</option>`).join("");
+                }
+            } else {
+                cFilter.innerHTML = `<option value="ALL">Tất cả 5 học phần</option>` +
+                    COURSES.map(c => `<option value="${c.name}">${c.code} - ${c.name} (${c.tc} TC)</option>`).join("");
+
+                fCourse.innerHTML = `<option value="ALL">Tất cả môn có điểm F</option>` +
+                    COURSES.map(c => `<option value="${c.name}">${c.code} - ${c.name}</option>`).join("");
+
+                modalCourse.innerHTML = COURSES.map(c => `<option value="${c.name}">${c.code} - ${c.name} (${c.tc} tín chỉ)</option>`).join("");
+            }
+        }
+
+        function refreshAllViews() {
+            updateHeaderUserBadge();
+            updateKPICards();
+            renderDetailTable();
+            renderGPATable();
+            renderLecturerDistribution();
+            renderFTable();
+            renderCoursesTable();
+            renderUsersTable();
+            renderAuditLogs();
+        }
+
+        // Cập nhật 4 thẻ KPI theo đúng phạm vi dữ liệu của từng vai trò
+        function updateKPICards() {
+            const isSv = currentUser && currentUser.isSv;
+            const isGv = currentUser && currentUser.roleKey === "gv";
+            const data = GRADES.filter(g => isRecordAllowedForCurrentUser(g));
+            const fItems = data.filter(g => evaluateScore(g.cc, g.kt, g.thi).letter === "F");
+
+            if (isSv) {
+                let sumWeighted = 0, sumTc = 0;
+                data.forEach(g => {
+                    const { raw } = evaluateScore(g.cc, g.kt, g.thi);
+                    sumWeighted += raw * g.tc;
+                    sumTc += g.tc;
+                });
+                const gpa = sumTc > 0 ? (sumWeighted / sumTc).toFixed(2) : "0.00";
+                document.getElementById("kpi-label-1").textContent = "Mã số sinh viên";
+                document.getElementById("kpi-val-1").textContent = currentUser.maSv;
+                document.getElementById("kpi-sub-1").innerHTML = `<i class="fa-solid fa-user-check mr-1"></i>${currentUser.name}`;
+
+                document.getElementById("kpi-label-2").textContent = "Học phần đăng ký";
+                document.getElementById("kpi-val-2").textContent = `${data.length} Môn (${sumTc} TC)`;
+                document.getElementById("kpi-sub-2").innerHTML = `<i class="fa-solid fa-book-open mr-1"></i>Dữ liệu cá nhân`;
+
+                document.getElementById("kpi-label-3").textContent = "Số môn bị điểm F";
+                document.getElementById("kpi-val-3").textContent = `${fItems.length} Môn F`;
+                document.getElementById("kpi-sub-3").innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>Điểm HP &lt; 3.00`;
+
+                document.getElementById("kpi-label-4").textContent = "ĐTB Học kỳ (Thang 10)";
+                document.getElementById("kpi-val-4").textContent = gpa;
+                document.getElementById("kpi-sub-4").innerHTML = `<i class="fa-solid fa-calculator mr-1"></i>Tính theo 14 tín chỉ`;
+            } else if (isGv) {
+                const allowed = getLecturerAllowedCourses();
+                const courseCodeStr = allowed.map(c => c.code).join(", ") || "Chưa gán";
+                const courseNameStr = allowed.map(c => c.name).join(", ") || "Chưa phân công";
+                const uniqueSvInCourse = new Set(data.map(g => g.maSv)).size;
+                const avgCourse = data.length > 0
+                    ? (data.reduce((acc, g) => acc + evaluateScore(g.cc, g.kt, g.thi).raw, 0) / data.length).toFixed(2)
+                    : "0.00";
+
+                document.getElementById("kpi-label-1").textContent = "SV trong lớp học phần";
+                document.getElementById("kpi-val-1").textContent = `${uniqueSvInCourse} Sinh viên`;
+                document.getElementById("kpi-sub-1").innerHTML = `<i class="fa-solid fa-users mr-1"></i>Lớp CNTT3K25 (${courseCodeStr})`;
+
+                document.getElementById("kpi-label-2").textContent = "Bản ghi học phần dạy";
+                document.getElementById("kpi-val-2").textContent = `${data.length} Bản ghi`;
+                document.getElementById("kpi-sub-2").innerHTML = `<i class="fa-solid fa-chalkboard-user mr-1"></i>${courseNameStr}`;
+
+                document.getElementById("kpi-label-3").textContent = "SV bị điểm F bộ môn";
+                document.getElementById("kpi-val-3").textContent = `${fItems.length} Sinh viên F`;
+                document.getElementById("kpi-sub-3").innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>Điểm bộ môn &lt; 3.00`;
+
+                document.getElementById("kpi-label-4").textContent = "ĐTB Học phần phụ trách";
+                document.getElementById("kpi-val-4").textContent = `${avgCourse} / 10`;
+                document.getElementById("kpi-sub-4").innerHTML = `<i class="fa-solid fa-chart-simple mr-1"></i>20% CC - 30% KT - 50% Thi`;
+            } else {
+                const passRate = data.length > 0 ? (((data.length - fItems.length) / data.length) * 100).toFixed(1) : "100";
+                document.getElementById("kpi-label-1").textContent = "Quy mô sinh viên";
+                document.getElementById("kpi-val-1").textContent = `${STUDENTS.length} Sinh viên`;
+                document.getElementById("kpi-sub-1").innerHTML = `<i class="fa-solid fa-users mr-1"></i>Lớp CNTT3K25`;
+
+                document.getElementById("kpi-label-2").textContent = "Tổng bản ghi điểm";
+                document.getElementById("kpi-val-2").textContent = `${data.length} Bản ghi`;
+                document.getElementById("kpi-sub-2").innerHTML = `<i class="fa-solid fa-book-open mr-1"></i>5 Môn (14 Tín chỉ)`;
+
+                document.getElementById("kpi-label-3").textContent = "Lượt học phần điểm F";
+                document.getElementById("kpi-val-3").textContent = `${fItems.length} Lượt F`;
+                document.getElementById("kpi-sub-3").innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i>Điểm HP &lt; 3.00`;
+
+                document.getElementById("kpi-label-4").textContent = "Tỷ lệ qua môn";
+                document.getElementById("kpi-val-4").textContent = `${passRate}% Đạt`;
+                document.getElementById("kpi-sub-4").innerHTML = `<i class="fa-solid fa-calculator mr-1"></i>20% CC - 30% KT - 50% Thi`;
+            }
+        }
+
+        // Render Tab 1: Bảng điểm học phần chi tiết (Khoanh vùng dữ liệu theo đúng học phần GV giảng dạy)
+        function renderDetailTable() {
+            const tbody = document.getElementById("detail-tbody");
+            const hk = document.getElementById("filter-hk").value;
+            const course = document.getElementById("filter-course").value;
+            const letterFilter = document.getElementById("filter-letter").value;
+            const kw = (document.getElementById("filter-search")?.value || "").trim().toLowerCase();
+
+            // Lọc nghiêm ngặt theo quyền của người dùng hiện tại
+            let list = GRADES.filter(g => isRecordAllowedForCurrentUser(g));
+
+            if (hk !== "ALL") list = list.filter(g => g.hk === hk);
+            if (course !== "ALL") list = list.filter(g => g.mon === course);
+            if (letterFilter !== "ALL") {
+                list = list.filter(g => evaluateScore(g.cc, g.kt, g.thi).letter === letterFilter);
+            }
+            if (kw && (!currentUser || !currentUser.isSv)) {
+                list = list.filter(g => {
+                    const sv = STUDENTS.find(s => s.ma === g.maSv) || { ten: "" };
+                    return g.maSv.toLowerCase().includes(kw) || sv.ten.toLowerCase().includes(kw);
+                });
+            }
+
+            tbody.innerHTML = "";
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-slate-400 font-semibold">Không tìm thấy bản ghi điểm học phần nào trong phạm vi phân quyền của bạn.</td></tr>`;
+                return;
+            }
+
+            list.forEach((g, idx) => {
+                const sv = STUDENTS.find(s => s.ma === g.maSv) || { ten: "Chưa rõ", lop: "CNTT3K25" };
+                const { hp, letter, status } = evaluateScore(g.cc, g.kt, g.thi);
+                const isF = letter === "F";
+                const courseLocked = isCourseLockedForEdit(g.maHp || g.mon);
+
+                const canEditRow = currentUser && (
+                    currentUser.roleKey === "admin" ||
+                    currentUser.roleKey === "pdt" ||
+                    (currentUser.roleKey === "gv" && !courseLocked && isRecordAllowedForCurrentUser(g))
+                );
+
+                const badgeColor = {
+                    "A": "bg-emerald-600 text-white",
+                    "B": "bg-sky-600 text-white",
+                    "C": "bg-amber-500 text-slate-950",
+                    "D": "bg-orange-500 text-white",
+                    "F": "bg-rose-600 text-white animate-pulse"
+                }[letter];
+
+                tbody.innerHTML += `
+                    <tr class="${isF ? 'row-f-alert' : 'hover:bg-slate-50'} transition">
+                        <td class="py-3 px-3 text-center font-bold text-slate-400">${idx + 1}</td>
+                        <td class="py-3 px-3 font-mono font-bold text-slate-800">${g.maSv}</td>
+                        <td class="py-3 px-3 font-extrabold text-slate-900">${sv.ten}</td>
+                        <td class="py-3 px-2.5 text-center"><span class="px-2 py-0.5 rounded bg-slate-100 font-bold text-[11px]">${sv.lop}</span></td>
+                        <td class="py-3 px-3 font-semibold text-slate-800">
+                            <span class="font-mono text-[11px] font-black text-hpuni-600 mr-1">[${g.maHp || 'HP'}]</span>${g.mon}
+                        </td>
+                        <td class="py-3 px-2 text-center font-bold">${g.tc}</td>
+                        <td class="py-3 px-2 text-center font-mono">${Number(g.cc).toFixed(2).replace(/\.00$/, '.0')}</td>
+                        <td class="py-3 px-2 text-center font-mono">${Number(g.kt).toFixed(2).replace(/\.00$/, '.0')}</td>
+                        <td class="py-3 px-2 text-center font-mono">${Number(g.thi).toFixed(2).replace(/\.00$/, '.0')}</td>
+                        <td class="py-3 px-3 text-center font-mono font-black ${isF ? 'text-rose-600' : 'text-hpuni-900'}">${hp.toFixed(2)}</td>
+                        <td class="py-3 px-2 text-center"><span class="px-2.5 py-0.5 rounded-md font-black text-xs ${badgeColor}">${letter}</span></td>
+                        <td class="py-3 px-3 font-bold text-xs ${isF ? 'text-rose-700' : 'text-slate-600'}">${status}</td>
+                        <td class="py-3 px-3 text-center whitespace-nowrap">
+                            ${canEditRow ? `
+                                <button onclick="openGradeModal(${g.id})" class="px-2.5 py-1 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-800 font-extrabold text-[11px] cursor-pointer"><i class="fa-solid fa-pen"></i> Sửa</button>
+                                <button onclick="deleteGrade(${g.id})" class="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 font-extrabold text-[11px] cursor-pointer ml-1"><i class="fa-solid fa-trash"></i></button>
+                            ` : `<span class="text-[11px] text-slate-400 font-semibold"><i class="fa-solid fa-lock mr-1"></i>${courseLocked ? 'Đã khóa sổ' : 'Chỉ xem'}</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Tab 2A: Bảng Tổng hợp Điểm trung bình học kỳ 5 môn (Dành cho Admin, PĐT, CVHT, Sinh viên)
+        function renderGPATable() {
+            const tbody = document.getElementById("gpa-tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            if (currentUser && currentUser.roleKey === "gv") return;
+
+            const targetStudents = (currentUser && currentUser.isSv)
+                ? STUDENTS.filter(s => s.ma === currentUser.maSv)
+                : STUDENTS;
+
+            targetStudents.forEach((sv, idx) => {
+                const svGrades = GRADES.filter(g => g.maSv === sv.ma);
+                const getCourseScore = (courseCode) => {
+                    const rec = svGrades.find(x => x.maHp === courseCode);
+                    if (!rec) return { txt: "-", isF: false };
+                    const { hp, letter } = evaluateScore(rec.cc, rec.kt, rec.thi);
+                    return { txt: `${hp.toFixed(2)} (${letter})`, isF: letter === "F" };
+                };
+
+                let sumWeighted = 0, sumTc = 0, passCount = 0, fCount = 0;
+                svGrades.forEach(g => {
+                    const { raw, letter } = evaluateScore(g.cc, g.kt, g.thi);
+                    sumWeighted += raw * g.tc;
+                    sumTc += g.tc;
+                    if (letter === "F") fCount++; else passCount++;
+                });
+
+                const gpa = sumTc > 0 ? (sumWeighted / sumTc) : 0;
+                let rank = "Qua đủ 5 học phần";
+                if (fCount > 0) rank = `Còn ${fCount} học phần nợ (F)`;
+
+                const c1 = getCourseScore("HP01");
+                const c2 = getCourseScore("HP02");
+                const c3 = getCourseScore("HP03");
+                const c4 = getCourseScore("HP04");
+                const c5 = getCourseScore("HP05");
+
+                tbody.innerHTML += `
+                    <tr class="${fCount > 0 ? 'bg-rose-50/60' : 'hover:bg-slate-50'} transition">
+                        <td class="py-3.5 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="py-3.5 px-3 font-mono font-bold">${sv.ma}</td>
+                        <td class="py-3.5 px-3 font-extrabold text-slate-900">${sv.ten}</td>
+                        <td class="py-3.5 px-2 text-center font-bold text-xs">${sv.lop}</td>
+                        <td class="py-3.5 px-2.5 text-center font-mono text-xs ${c1.isF ? 'text-rose-600 font-black' : ''}">${c1.txt}</td>
+                        <td class="py-3.5 px-2.5 text-center font-mono text-xs ${c2.isF ? 'text-rose-600 font-black' : ''}">${c2.txt}</td>
+                        <td class="py-3.5 px-2.5 text-center font-mono text-xs ${c3.isF ? 'text-rose-600 font-black' : ''}">${c3.txt}</td>
+                        <td class="py-3.5 px-2.5 text-center font-mono text-xs ${c4.isF ? 'text-rose-600 font-black' : ''}">${c4.txt}</td>
+                        <td class="py-3.5 px-2.5 text-center font-mono text-xs ${c5.isF ? 'text-rose-600 font-black' : ''}">${c5.txt}</td>
+                        <td class="py-3.5 px-3 text-center font-mono font-black text-base text-hpuni-900 bg-sky-50">${gpa.toFixed(2)}</td>
+                        <td class="py-3.5 px-2 text-center font-extrabold text-emerald-600">${passCount}</td>
+                        <td class="py-3.5 px-2 text-center font-extrabold ${fCount > 0 ? 'text-rose-600' : 'text-slate-400'}">${fCount}</td>
+                        <td class="py-3.5 px-3 font-bold text-xs ${fCount > 0 ? 'text-rose-700' : 'text-emerald-700'}">${rank}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Tab 2B: Thống kê Phổ điểm Học phần Bộ môn (Dành riêng cho Giảng viên)
+        function renderLecturerDistribution() {
+            if (!currentUser || currentUser.roleKey !== "gv") return;
+            const allowed = getLecturerAllowedCourses();
+            const list = GRADES.filter(g => isRecordAllowedForCurrentUser(g));
+            const titleEl = document.getElementById("lecturer-dist-title");
+            const cardsEl = document.getElementById("lecturer-dist-cards");
+            const tbody = document.getElementById("lecturer-dist-tbody");
+
+            const titleNames = allowed.map(c => `${c.code} - ${c.name} (${c.tc} Tín chỉ)`).join(" | ");
+            titleEl.textContent = `THỐNG KÊ PHỔ ĐIỂM HỌC PHẦN PHỤ TRÁCH: ${titleNames || "CHƯA PHÂN CÔNG"}`;
+
+            const counts = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+            list.forEach(g => {
+                const { letter } = evaluateScore(g.cc, g.kt, g.thi);
+                counts[letter] = (counts[letter] || 0) + 1;
+            });
+
+            const meta = [
+                { k: "A", label: "Điểm A (9.0 - 10)", cls: "bg-emerald-50 border-emerald-200 text-emerald-800" },
+                { k: "B", label: "Điểm B (7.0 - 8.99)", cls: "bg-sky-50 border-sky-200 text-sky-800" },
+                { k: "C", label: "Điểm C (5.0 - 6.99)", cls: "bg-amber-50 border-amber-200 text-amber-900" },
+                { k: "D", label: "Điểm D (3.0 - 4.99)", cls: "bg-orange-50 border-orange-200 text-orange-800" },
+                { k: "F", label: "Điểm F (< 3.00 - Trượt)", cls: "bg-rose-50 border-rose-300 text-rose-700" }
+            ];
+
+            cardsEl.innerHTML = meta.map(m => `
+                <div class="p-3.5 rounded-xl border ${m.cls} flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase">${m.label}</span>
+                    <div class="text-2xl font-black mt-1">${counts[m.k]} SV</div>
+                </div>
+            `).join("");
+
+            tbody.innerHTML = "";
+            list.forEach((g, idx) => {
+                const sv = STUDENTS.find(s => s.ma === g.maSv) || { ten: "Chưa rõ", lop: "CNTT3K25" };
+                const { hp, letter, status } = evaluateScore(g.cc, g.kt, g.thi);
+                const isF = letter === "F";
+                tbody.innerHTML += `
+                    <tr class="${isF ? 'row-f-alert' : 'hover:bg-slate-50'}">
+                        <td class="py-3 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
+                        <td class="py-3 px-3 font-mono font-bold">${g.maSv}</td>
+                        <td class="py-3 px-3 font-extrabold text-slate-900">${sv.ten}</td>
+                        <td class="py-3 px-2.5 text-center font-bold text-xs">${sv.lop}</td>
+                        <td class="py-3 px-3 font-bold text-emerald-900">[${g.maHp}] ${g.mon}</td>
+                        <td class="py-3 px-2 text-center font-bold">${g.tc}</td>
+                        <td class="py-3 px-2.5 text-center font-mono">${g.cc}</td>
+                        <td class="py-3 px-2.5 text-center font-mono">${g.kt}</td>
+                        <td class="py-3 px-2.5 text-center font-mono">${g.thi}</td>
+                        <td class="py-3 px-3 text-center font-mono font-black ${isF ? 'text-rose-600' : 'text-emerald-950'}">${hp.toFixed(2)}</td>
+                        <td class="py-3 px-2.5 text-center font-black ${isF ? 'text-rose-600' : 'text-slate-900'}">${letter}</td>
+                        <td class="py-3 px-3 font-bold text-xs ${isF ? 'text-rose-700' : 'text-emerald-700'}">${status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Tab 3: Danh sách trích xuất sinh viên bị điểm F (< 3.00) (Khoanh vùng theo môn của Giảng viên)
+        function renderFTable() {
+            const tbody = document.getElementById("f-tbody");
+            const courseFilter = document.getElementById("f-filter-course").value;
+            tbody.innerHTML = "";
+
+            let fList = GRADES.filter(g => isRecordAllowedForCurrentUser(g) && evaluateScore(g.cc, g.kt, g.thi).letter === "F");
+            if (courseFilter !== "ALL") {
+                fList = fList.filter(g => g.mon === courseFilter);
+            }
+
+            if (fList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="py-8 text-center text-emerald-700 font-extrabold bg-emerald-50"><i class="fa-solid fa-circle-check mr-2"></i>Không có sinh viên nào bị điểm F (&lt; 3.00) trong phạm vi học phần này!</td></tr>`;
+                return;
+            }
+
+            fList.forEach((g, idx) => {
+                const sv = STUDENTS.find(s => s.ma === g.maSv) || { ten: "Chưa rõ", lop: "CNTT3K25" };
+                const { hp } = evaluateScore(g.cc, g.kt, g.thi);
+                tbody.innerHTML += `
+                    <tr class="bg-rose-50/80 hover:bg-rose-100/80 transition">
+                        <td class="py-3.5 px-3 text-center font-mono font-black text-rose-700">F0${idx + 1}</td>
+                        <td class="py-3.5 px-3 font-mono font-bold text-slate-900">${g.maSv}</td>
+                        <td class="py-3.5 px-3 font-extrabold text-rose-950">${sv.ten}</td>
+                        <td class="py-3.5 px-2.5 text-center font-bold text-xs">${sv.lop}</td>
+                        <td class="py-3.5 px-3 text-xs font-semibold text-slate-600">${g.hk}</td>
+                        <td class="py-3.5 px-3 font-extrabold text-rose-900">[${g.maHp}] ${g.mon}</td>
+                        <td class="py-3.5 px-2 text-center font-bold">${g.tc}</td>
+                        <td class="py-3.5 px-2 text-center font-mono">${g.cc}</td>
+                        <td class="py-3.5 px-2 text-center font-mono">${g.kt}</td>
+                        <td class="py-3.5 px-2 text-center font-mono">${g.thi}</td>
+                        <td class="py-3.5 px-3 text-center font-mono font-black text-rose-600 bg-rose-100/70">${hp.toFixed(2)}</td>
+                        <td class="py-3.5 px-2 text-center"><span class="px-2.5 py-0.5 rounded bg-rose-600 text-white font-black text-xs">F</span></td>
+                        <td class="py-3.5 px-3 font-extrabold text-xs text-rose-800"><i class="fa-solid fa-rotate-right mr-1"></i>Bắt buộc đăng ký học lại</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Tab 4: Danh mục học phần, Phân công Giảng viên & Khóa sổ từng môn (PĐT & Admin)
+        function renderCoursesTable() {
+            const tbody = document.getElementById("courses-tbody");
+            if (!tbody) return;
+
+            const gvAccounts = Object.keys(USERS).filter(k => USERS[k].roleKey === "gv");
+
+            tbody.innerHTML = COURSES.map(c => {
+                const isLocked = isSemesterLocked || c.locked;
+                const optionsHtml = gvAccounts.map(accKey => {
+                    const u = USERS[accKey];
+                    const selected = (c.lecturerAcc === accKey) ? "selected" : "";
+                    return `<option value="${accKey}" ${selected}>${accKey} - ${u.name}</option>`;
+                }).join("");
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-3 font-mono font-black text-indigo-700">${c.code}</td>
+                        <td class="py-3 px-3 font-extrabold text-slate-900">${c.name}</td>
+                        <td class="py-3 px-2.5 text-center font-extrabold">${c.tc} TC</td>
+                        <td class="py-3 px-3">
+                            <select onchange="reassignCourseLecturer('${c.code}', this.value)" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-xs font-bold text-slate-800 outline-none focus:border-indigo-600">
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                        <td class="py-3 px-3 font-mono text-xs font-bold text-emerald-700">${c.lecturerAcc}</td>
+                        <td class="py-3 px-3 text-center">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${isLocked ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+                                ${isLocked ? '🔒 Đã khóa điểm' : '🔓 Mở nhập điểm'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                            <button onclick="toggleSingleCourseLock('${c.code}')" class="px-3 py-1 rounded-lg ${c.locked ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-800'} font-extrabold text-[11px] cursor-pointer">
+                                ${c.locked ? 'Mở khóa môn' : 'Khóa môn này'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        function reassignCourseLecturer(courseCode, newGvKey) {
+            const courseObj = COURSES.find(c => c.code === courseCode);
+            if (!courseObj || !USERS[newGvKey]) return;
+
+            if (!USERS[newGvKey].assignedCourses) USERS[newGvKey].assignedCourses = [];
+            if (!USERS[newGvKey].assignedCourses.includes(courseCode)) {
+                USERS[newGvKey].assignedCourses.push(courseCode);
+            }
+
+            courseObj.lecturerAcc = newGvKey;
+            courseObj.lecturerName = USERS[newGvKey].name;
+            USERS[newGvKey].roleName = `Giảng viên (Phụ trách ${USERS[newGvKey].assignedCourses.join(", ")})`;
+
+            addAuditLog(`PHÂN CÔNG HỌC PHẦN: Gán học phần [${courseCode} - ${courseObj.name}] cho giảng viên [${newGvKey}].`);
+            populateCourseFilters();
+            refreshAllViews();
+            showToast(`Đã phân công ${USERS[newGvKey].name} (${newGvKey}) phụ trách học phần ${courseObj.name}!`);
+        }
+
+        function toggleSingleCourseLock(courseCode) {
+            const c = COURSES.find(x => x.code === courseCode);
+            if (!c) return;
+            c.locked = !c.locked;
+            addAuditLog(`${c.locked ? 'KHÓA ĐIỂM MÔN HỌC' : 'MỞ KHÓA ĐIỂM MÔN HỌC'}: [${c.code} - ${c.name}].`);
+            configureRolePermissions();
+            refreshAllViews();
+            showToast(`Đã ${c.locked ? 'khóa' : 'mở khóa'} bảng điểm môn ${c.name}!`, c.locked ? "warning" : "success");
+        }
+
+        function toggleSemesterLock() {
+            isSemesterLocked = !isSemesterLocked;
+            const headerBadge = document.getElementById("header-lock-badge");
+            const pdtBadge = document.getElementById("pdt-lock-status-badge");
+            const btnLock = document.getElementById("btn-toggle-lock");
+
+            if (isSemesterLocked) {
+                headerBadge.classList.remove("hidden");
+                pdtBadge.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800";
+                pdtBadge.textContent = "Đã khóa sổ điểm";
+                btnLock.className = "px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow transition flex items-center gap-2 cursor-pointer";
+                btnLock.innerHTML = `<i class="fa-solid fa-lock-open"></i> Mở Khóa Bảng Điểm Học Kỳ`;
+                addAuditLog("CHỐT SỔ ĐIỂM: Đã khóa quyền chỉnh sửa bảng điểm toàn học kỳ.");
+                showToast("Đã khóa sổ điểm học kỳ! Giảng viên không thể sửa điểm.", "warning");
+            } else {
+                headerBadge.classList.add("hidden");
+                pdtBadge.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800";
+                pdtBadge.textContent = "Đang mở nhập điểm";
+                btnLock.className = "px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow transition flex items-center gap-2 cursor-pointer";
+                btnLock.innerHTML = `<i class="fa-solid fa-lock"></i> Khóa Sổ Điểm Học Kỳ Ngay`;
+                addAuditLog("MỞ SỔ ĐIỂM: Đã mở khóa cho phép Giảng viên cập nhật điểm.");
+                showToast("Đã mở khóa bảng điểm học kỳ!");
+            }
+            configureRolePermissions();
+            refreshAllViews();
+        }
+
+        function addNewStudent(e) {
+            e.preventDefault();
+            const ma = document.getElementById("new-sv-ma").value.trim();
+            const ten = document.getElementById("new-sv-ten").value.trim();
+            const lop = document.getElementById("new-sv-lop").value.trim();
+
+            if (STUDENTS.some(s => s.ma === ma)) {
+                showToast("Mã sinh viên này đã tồn tại trong danh sách!", "error");
+                return;
+            }
+
+            STUDENTS.push({ ma, ten, lop });
+            USERS[ma.toLowerCase()] = {
+                pass: "1", altPass: "123456", roleKey: "sv", code: ma,
+                roleName: `Sinh viên (${lop})`, name: ten, locked: false, isSv: true, maSv: ma
+            };
+
+            document.getElementById("new-sv-ma").value = "";
+            document.getElementById("new-sv-ten").value = "";
+            addAuditLog(`THÊM SINH VIÊN: Tạo hồ sơ và tài khoản cho SV ${ten} (${ma}).`);
+            refreshAllViews();
+            showToast(`Đã thêm sinh viên ${ten} (${ma}) và cấp tài khoản thành công!`);
+        }
+
+        // Render Tab 5: Quản trị Tài khoản, Phân quyền & Gán bộ môn cho Giảng viên (Admin)
+        function renderUsersTable() {
+            const tbody = document.getElementById("users-tbody");
+            if (!tbody) return;
+            tbody.innerHTML = "";
+
+            const mainKeys = [
+                "admin", "pdt", "cvht",
+                "gv", "gv01", "gv02", "gv03", "gv04", "gv05",
+                "241321112", "241321111", "2413211113", "2413211114", "241321115", "241321116"
+            ];
+            Object.keys(USERS).forEach(k => {
+                if (!mainKeys.includes(k) && !["sv", "sv01", "241321113", "241321114"].includes(k)) {
+                    mainKeys.push(k);
+                }
+            });
+
+            mainKeys.forEach(k => {
+                const u = USERS[k];
+                if (!u) return;
+
+                let roleBadgeHtml = `<span class="font-semibold text-slate-700">${u.roleName}</span>`;
+                if (u.roleKey === "gv") {
+                    const assigned = (u.assignedCourses || []).map(code => {
+                        const cObj = COURSES.find(c => c.code === code);
+                        return cObj ? `<span class="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold text-[10px] mr-1 mt-0.5">${cObj.code}: ${cObj.name}</span>` : code;
+                    }).join("");
+                    roleBadgeHtml = `<div><span class="font-bold text-emerald-700">Giảng viên Bộ môn</span><div class="mt-0.5">${assigned || '<span class="text-rose-500 text-[10px]">Chưa gán học phần</span>'}</div></div>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-mono font-bold text-purple-900">${k}</td>
+                        <td class="py-2.5 px-3 font-extrabold text-slate-900">${u.name}</td>
+                        <td class="py-2.5 px-3">${roleBadgeHtml}</td>
+                        <td class="py-2.5 px-2.5 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${u.locked ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+                                ${u.locked ? 'Đã khóa' : 'Hoạt động'}
+                            </span>
+                        </td>
+                        <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                            ${k !== "admin" ? `
+                                ${u.roleKey === "gv" ? `
+                                    <button onclick="openEditUserModal('${k}')" class="px-2.5 py-1 rounded bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-[11px] cursor-pointer mr-1">
+                                        <i class="fa-solid fa-book"></i> Gán môn dạy
+                                    </button>
+                                ` : ''}
+                                <button onclick="toggleUserLock('${k}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] cursor-pointer">
+                                    <i class="fa-solid ${u.locked ? 'fa-unlock text-emerald-600' : 'fa-ban text-rose-600'}"></i> ${u.locked ? 'Mở' : 'Khóa'}
+                                </button>
+                                <button onclick="resetUserPass('${k}')" class="px-2.5 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[11px] cursor-pointer ml-1">
+                                    Reset MK
+                                </button>
+                            ` : `<span class="text-[11px] text-purple-700 font-extrabold">Quản trị hệ thống (ADMIN01)</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function toggleUserLock(username) {
+            const u = USERS[username];
+            if (!u) return;
+            u.locked = !u.locked;
+            addAuditLog(`${u.locked ? 'KHÓA' : 'MỞ KHÓA'} tài khoản người dùng [${username}].`);
+            renderUsersTable();
+            showToast(`Đã ${u.locked ? 'khóa' : 'mở khóa'} tài khoản ${username}!`, u.locked ? "warning" : "success");
+        }
+
+        function resetUserPass(username) {
+            const u = USERS[username];
+            if (!u) return;
+            u.pass = "1";
+            u.altPass = "1";
+            addAuditLog(`RESET MẬT KHẨU tài khoản [${username}] về mặc định '1'.`);
+            showToast(`Đã đặt lại mật khẩu của [${username}] về '1'!`);
+        }
+
+        function renderAuditLogs() {
+            const box = document.getElementById("audit-log-box");
+            if (!box) return;
+            box.innerHTML = AUDIT_LOGS.map(l => `
+                <div class="p-2 rounded-lg bg-slate-900/90 border border-slate-800 text-emerald-400 leading-relaxed">${l}</div>
+            `).join("");
+        }
+
+        // Modal Thêm/Sửa điểm học phần (Giới hạn đúng học phần của Giảng viên)
+        function openGradeModal(id = null) {
+            const modal = document.getElementById("grade-modal");
+            const svSelect = document.getElementById("modal-sv");
+            svSelect.innerHTML = STUDENTS.map(s => `<option value="${s.ma}">${s.ma} - ${s.ten}</option>`).join("");
+            populateCourseFilters();
+
+            if (id) {
+                const g = GRADES.find(x => x.id === id);
+                if (!g) return;
+                if (!isRecordAllowedForCurrentUser(g)) {
+                    showToast("Bạn không có quyền chỉnh sửa học phần của giảng viên khác!", "error");
+                    return;
+                }
+                if (currentUser.roleKey === "gv" && isCourseLockedForEdit(g.maHp || g.mon)) {
+                    showToast("Bảng điểm học phần này đã bị Phòng Đào tạo khóa sổ!", "error");
+                    return;
+                }
+                document.getElementById("grade-modal-title").textContent = `Cập nhật điểm học phần (#${g.id} - ${g.maHp})`;
+                document.getElementById("edit-grade-id").value = g.id;
+                svSelect.value = g.maSv;
+                document.getElementById("modal-course").value = g.mon;
+                document.getElementById("modal-cc").value = g.cc;
+                document.getElementById("modal-kt").value = g.kt;
+                document.getElementById("modal-thi").value = g.thi;
+            } else {
+                if (currentUser.roleKey === "gv") {
+                    const allowed = getLecturerAllowedCourses();
+                    if (allowed.length === 0) {
+                        showToast("Tài khoản Giảng viên của bạn chưa được phân công học phần nào!", "error");
+                        return;
+                    }
+                    if (allowed.every(c => isCourseLockedForEdit(c.code))) {
+                        showToast("Học phần của bạn đã bị Phòng Đào tạo khóa sổ!", "error");
+                        return;
+                    }
+                }
+                document.getElementById("grade-modal-title").textContent = "Thêm / Nhập điểm học phần phụ trách";
+                document.getElementById("edit-grade-id").value = "";
+                document.getElementById("modal-cc").value = "8.0";
+                document.getElementById("modal-kt").value = "7.5";
+                document.getElementById("modal-thi").value = "8.0";
+            }
+            previewModalScore();
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeGradeModal() {
+            const modal = document.getElementById("grade-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function previewModalScore() {
+            const cc = parseFloat(document.getElementById("modal-cc").value) || 0;
+            const kt = parseFloat(document.getElementById("modal-kt").value) || 0;
+            const thi = parseFloat(document.getElementById("modal-thi").value) || 0;
+            const { hp, letter, status } = evaluateScore(cc, kt, thi);
+            const el = document.getElementById("modal-preview-val");
+            el.textContent = `${hp.toFixed(2)} — Điểm ${letter} (${status})`;
+            el.className = `font-black ${letter === 'F' ? 'text-rose-600' : 'text-emerald-700'}`;
+        }
+
+        function saveGrade(e) {
+            e.preventDefault();
+            const id = document.getElementById("edit-grade-id").value;
+            const maSv = document.getElementById("modal-sv").value;
+            const mon = document.getElementById("modal-course").value;
+            const cc = parseFloat(document.getElementById("modal-cc").value);
+            const kt = parseFloat(document.getElementById("modal-kt").value);
+            const thi = parseFloat(document.getElementById("modal-thi").value);
+
+            if ([cc, kt, thi].some(v => isNaN(v) || v < 0 || v > 10)) {
+                showToast("Điểm nhập vào phải nằm trong khoảng [0.0, 10.0]!", "error");
+                return;
+            }
+
+            const courseObj = COURSES.find(c => c.name === mon) || { code: "HP02", tc: 2 };
+
+            if (currentUser.roleKey === "gv") {
+                const allowedCodes = currentUser.assignedCourses || [];
+                if (!allowedCodes.includes(courseObj.code)) {
+                    showToast("Từ chối: Bạn chỉ được phép nhập điểm cho học phần mình phụ trách!", "error");
+                    return;
+                }
+            }
+
+            if (id) {
+                const g = GRADES.find(x => x.id == id);
+                if (g) {
+                    g.maSv = maSv; g.maHp = courseObj.code; g.mon = mon; g.tc = courseObj.tc;
+                    g.cc = cc; g.kt = kt; g.thi = thi;
+                }
+                addAuditLog(`CẬP NHẬT ĐIỂM: SV ${maSv} - Môn [${courseObj.code}] ${mon} (CC:${cc}, KT:${kt}, Thi:${thi}).`);
+                showToast("Đã cập nhật điểm học phần thành công!");
+            } else {
+                const newId = GRADES.length > 0 ? Math.max(...GRADES.map(x => x.id)) + 1 : 1;
+                GRADES.push({ id: newId, maSv, hk: "Học kỳ 1 (2025-2026)", maHp: courseObj.code, mon, tc: courseObj.tc, cc, kt, thi });
+                addAuditLog(`THÊM ĐIỂM MỚI: SV ${maSv} - Môn [${courseObj.code}] ${mon}.`);
+                showToast("Đã thêm bản ghi điểm học phần mới!");
+            }
+
+            closeGradeModal();
+            refreshAllViews();
+        }
+
+        function deleteGrade(id) {
+            const g = GRADES.find(x => x.id === id);
+            if (!g) return;
+            if (!isRecordAllowedForCurrentUser(g)) {
+                showToast("Bạn không có quyền xóa bản ghi điểm của bộ môn khác!", "error");
+                return;
+            }
+            GRADES = GRADES.filter(x => x.id !== id);
+            addAuditLog(`XÓA BẢN GHI ĐIỂM: SV ${g.maSv} - Môn ${g.mon}.`);
+            refreshAllViews();
+            showToast("Đã xóa bản ghi điểm học phần!");
+        }
+
+        // Xuất báo cáo danh sách sinh viên bị điểm F ra Excel/CSV (chuẩn UTF-8 BOM tiếng Việt)
+        function exportFToCSV() {
+            const fList = GRADES.filter(g => isRecordAllowedForCurrentUser(g) && evaluateScore(g.cc, g.kt, g.thi).letter === "F");
+            if (fList.length === 0) {
+                showToast("Không có học phần điểm F nào để xuất báo cáo!", "error");
+                return;
+            }
+
+            let csv = "\uFEFFMã F,Mã SV,Họ và tên,Lớp,Học kỳ,Mã HP,Tên học phần nợ,Số TC,Điểm CC (20%),Điểm KT (30%),Điểm Thi (50%),Điểm Tổng Kết,Điểm Chữ,Trạng thái xử lý\n";
+            fList.forEach((g, idx) => {
+                const sv = STUDENTS.find(s => s.ma === g.maSv) || { ten: "Chưa rõ", lop: "CNTT3K25" };
+                const { hp } = evaluateScore(g.cc, g.kt, g.thi);
+                csv += `"F0${idx + 1}","${g.maSv}","${sv.ten}","${sv.lop}","${g.hk}","${g.maHp}","${g.mon}",${g.tc},${g.cc},${g.kt},${g.thi},${hp.toFixed(2)},"F","Bắt buộc học lại"\n`;
+            });
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "Danh_Sach_Sinh_Vien_Diem_F_CNTT3K25_HPUNI.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            addAuditLog(`XUẤT BÁO CÁO CSV: Trích xuất ${fList.length} lượt học phần bị điểm F.`);
+            showToast(`Đã tải xuống tệp CSV (${fList.length} học phần điểm F)!`);
+        }
+
+        // Modal Đổi mật khẩu cá nhân
+        function openPasswordModal() {
+            const modal = document.getElementById("pass-modal");
+            document.getElementById("old-pass").value = "";
+            document.getElementById("new-pass").value = "";
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById("pass-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function saveNewPassword(e) {
+            e.preventDefault();
+            const oldP = document.getElementById("old-pass").value.trim();
+            const newP = document.getElementById("new-pass").value.trim();
+
+            if (currentUser.pass !== oldP && currentUser.altPass !== oldP) {
+                showToast("Mật khẩu hiện tại không chính xác!", "error");
+                return;
+            }
+            currentUser.pass = newP;
+            currentUser.altPass = newP;
+            addAuditLog("ĐỔI MẬT KHẨU cá nhân thành công.");
+            closePasswordModal();
+            showToast("Đã cập nhật mật khẩu cá nhân mới!");
+        }
+
+        // Modal Cấp tài khoản mới / Gán học phần cho Giảng viên (Admin)
+        function renderCourseCheckboxes(selectedCodes = ["HP02"]) {
+            const container = document.getElementById("u-courses-checkboxes");
+            if (!container) return;
+            container.innerHTML = COURSES.map(c => {
+                const checked = selectedCodes.includes(c.code) ? "checked" : "";
+                return `
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer hover:bg-purple-100/60 p-1.5 rounded-lg">
+                        <input type="checkbox" name="u-course-chk" value="${c.code}" ${checked} class="rounded text-purple-600 focus:ring-purple-500">
+                        <span class="font-mono text-purple-800">[${c.code}]</span>
+                        <span>${c.name} (${c.tc} TC)</span>
+                    </label>
+                `;
+            }).join("");
+        }
+
+        function toggleUserCourseAssignBox() {
+            const role = document.getElementById("u-role").value;
+            const box = document.getElementById("u-courses-box");
+            box.classList.toggle("hidden", role !== "gv");
+        }
+
+        function openUserModal() {
+            const modal = document.getElementById("user-modal");
+            document.getElementById("user-modal-title").textContent = "Cấp tài khoản & Phân công bộ môn";
+            document.getElementById("u-edit-mode").value = "create";
+            const uInput = document.getElementById("u-username");
+            uInput.value = "";
+            uInput.disabled = false;
+            document.getElementById("u-fullname").value = "";
+            document.getElementById("u-role").value = "gv";
+            document.getElementById("u-pass").value = "1";
+            renderCourseCheckboxes(["HP02"]);
+            toggleUserCourseAssignBox();
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function openEditUserModal(username) {
+            const u = USERS[username];
+            if (!u) return;
+            const modal = document.getElementById("user-modal");
+            document.getElementById("user-modal-title").textContent = `Phân công học phần giảng dạy (${username})`;
+            document.getElementById("u-edit-mode").value = "edit";
+            const uInput = document.getElementById("u-username");
+            uInput.value = username;
+            uInput.disabled = true;
+            document.getElementById("u-fullname").value = u.name;
+            document.getElementById("u-role").value = u.roleKey;
+            document.getElementById("u-pass").value = u.pass;
+            renderCourseCheckboxes(u.assignedCourses || []);
+            toggleUserCourseAssignBox();
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeUserModal() {
+            const modal = document.getElementById("user-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function saveNewUser(e) {
+            e.preventDefault();
+            const mode = document.getElementById("u-edit-mode").value;
+            const uName = document.getElementById("u-username").value.trim().toLowerCase();
+            const fullName = document.getElementById("u-fullname").value.trim();
+            const roleKey = document.getElementById("u-role").value;
+            const pass = document.getElementById("u-pass").value.trim();
+
+            const selectedCourses = Array.from(document.querySelectorAll('input[name="u-course-chk"]:checked')).map(el => el.value);
+            if (roleKey === "gv" && selectedCourses.length === 0) {
+                showToast("Vui lòng chọn ít nhất 1 học phần giảng dạy cho Giảng viên!", "error");
+                return;
+            }
+
+            if (mode === "create" && USERS[uName]) {
+                showToast("Tên tài khoản này đã tồn tại trên hệ thống!", "error");
+                return;
+            }
+
+            const roleMap = {
+                "admin": "Quản trị hệ thống (ADMIN01)",
+                "pdt": "Cán bộ Phòng Đào tạo (PDT01)",
+                "gv": `Giảng viên (Phụ trách ${selectedCourses.join(", ")})`,
+                "cvht": "Cố vấn học tập (CVHT01)"
+            };
+
+            USERS[uName] = {
+                pass, altPass: pass, roleKey,
+                roleName: roleMap[roleKey], name: fullName, locked: false, isSv: false,
+                assignedCourses: roleKey === "gv" ? selectedCourses : []
+            };
+
+            addAuditLog(`${mode === "edit" ? "CẬP NHẬT PHÂN QUYỀN" : "CẤP TÀI KHOẢN"}: [${uName}] — ${roleMap[roleKey]}.`);
+            closeUserModal();
+            populateCourseFilters();
+            refreshAllViews();
+            showToast(`Đã lưu cấu hình tài khoản [${uName}] thành công!`);
+        }
+    </script>
+</body>
+</html>
